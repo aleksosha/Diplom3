@@ -1,15 +1,19 @@
 import pytest
-from selenium import webdriver
 from pages.header_page import HeaderPage
-from conftest import driver
-BASE_URL = "https://stellarburgers.nomoreparties.site"
-FEED_URL = f"{BASE_URL}/feed"
 
+def test_navigation_to_order_feed(driver, base_url):
 
-def test_navigation_to_order_feed(driver):
-    driver.get(BASE_URL)
-
-    header = HeaderPage(driver)
-    header.click_order_feed_button()
-
-    assert driver.current_url.rstrip("/") == FEED_URL.rstrip("/"), "Переход по кнопке 'Лента заказов' не удался"
+    try:
+        driver.get(base_url)
+        
+        header = HeaderPage(driver)
+        header.click_order_feed_button()
+        
+        feed_url = f"{base_url}/feed"
+        expected_url = feed_url.rstrip("/")
+        actual_url = driver.current_url.rstrip("/")
+        
+        assert actual_url == expected_url, f"Переход по кнопке 'Лента заказов' не удался. Ожидался URL: {expected_url}, получен: {actual_url}"
+        
+    except Exception as e:
+        pytest.fail(f"Тест упал с ошибкой: {str(e)}")

@@ -1,33 +1,55 @@
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions
-from selenium.webdriver.support.wait import WebDriverWait
+from pages.base_page import BasePage
 from locators.account_page_locators import AccountPageLocators
 from locators.login_page_locators import LoginPageLocators
-from pages.account_page import AccountPage
+from selenium.common.exceptions import TimeoutException, NoSuchElementException
 
 
-class LoginPage:
+class LoginPage(BasePage):
+ 
     def __init__(self, driver):
-        self.driver = driver
-        self.wait = WebDriverWait(driver, 10)
-
-    def open(self):
-        self.driver.get("https://stellarburgers.nomoreparties.site/login")
+        super().__init__(driver, url="https://stellarburgers.nomoreparties.site/login")
 
     def enter_email(self, email):
-        email_field = self.driver.find_element(*LoginPageLocators.EMAIL_FIELD)
-        email_field.send_keys(email)
+
+        try:
+            self.enter_text(LoginPageLocators.EMAIL_FIELD, email)
+        except Exception as e:
+            raise Exception(f"Не введен email: {str(e)}") from e
 
     def enter_password(self, password):
-        password_field = self.driver.find_element(*LoginPageLocators.PASSWORD_FIELD)
-        password_field.send_keys(password)
+
+        try:
+            self.enter_text(LoginPageLocators.PASSWORD_FIELD, password)
+        except Exception as e:
+            raise Exception(f"Не введен пароль: {str(e)}") from e
 
     def click_login_button(self):
-        login_button = self.driver.find_element(*LoginPageLocators.LOGIN_BUTTON)
-        login_button.click()
+ 
+        try:
+            self.click_element(LoginPageLocators.LOGIN_BUTTON)
+        except Exception as e:
+            raise Exception(f"Не кликнута кнопка Логина: {str(e)}") from e
 
     def click_account_button(self):
-        account_button = self.driver.find_element(*AccountPageLocators.ACCOUNT_BUTTON)
-        account_button.click()
-        self.wait.until(expected_conditions.url_to_be(AccountPageLocators.ACCOUNT_PAGE_URL))
-        return AccountPage(self.driver)
+  
+        try:
+            self.click_element(AccountPageLocators.ACCOUNT_BUTTON)
+            
+            self.wait_for_url_to_be(AccountPageLocators.ACCOUNT_PAGE_URL)
+            
+            # Import here to avoid circular import
+            from pages.account_page import AccountPage
+            return AccountPage(self.driver)
+        except Exception as e:
+            raise Exception(f"Нет перехода на страницу Личного кабинета: {str(e)}") from e
+            
+    def login(self, email, password):
+
+        try:
+            self.open()
+            self.enter_email(email)
+            self.enter_password(password)
+            self.click_login_button()
+            return self
+        except Exception as e:
+            raise Exception(f"Логин не удался: {str(e)}") from e

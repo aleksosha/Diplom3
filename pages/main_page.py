@@ -1,62 +1,106 @@
-from selenium.webdriver import ActionChains
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
+from pages.base_page import BasePage
 from locators.main_page_locators import MainPageLocators
+from selenium.common.exceptions import TimeoutException
+from selenium.webdriver import ActionChains
 
-class MainPage:
+class MainPage(BasePage):
+
     def __init__(self, driver):
-        self.driver = driver
-        self.wait = WebDriverWait(driver, 10)
-        self.locators = MainPageLocators  # используем локаторы напрямую
+        super().__init__(driver, url="https://stellarburgers.nomoreparties.site")
+        self.locators = MainPageLocators
 
     def click_first_ingredient(self):
-        ingredient = self.wait.until(
-            EC.element_to_be_clickable(self.locators.FIRST_INGREDIENT)
-        )
-        ingredient.click()
+
+        try:
+            self.click_element(self.locators.FIRST_INGREDIENT)
+        except Exception as e:
+            raise
 
     def wait_for_modal_to_appear(self):
-        self.wait.until(
-            EC.visibility_of_element_located(self.locators.MODAL_WINDOW)
-        )
+
+        try:
+            self.wait_for_element_visible(self.locators.MODAL_WINDOW)
+        except TimeoutException as e:
+            raise TimeoutException("Модалка не появилась") from e
 
     def close_modal(self):
-        self.wait_for_modal_to_appear()  # Убедитесь, что модалка открылась
-        close_btn = self.wait.until(
-            EC.element_to_be_clickable(self.locators.CLOSE_MODAL_BUTTON)
-        )
-        close_btn.click()
+
+        try:
+            self.wait_for_modal_to_appear()  # Ensure modal is open
+            self.click_element(self.locators.CLOSE_MODAL_BUTTON)
+        except Exception as e:
+            raise
 
     def wait_for_modal_to_disappear(self):
-        self.wait.until(
-            EC.invisibility_of_element_located(self.locators.MODAL_WINDOW)
-        )
+
+        try:
+            self.wait_for_element_invisible(self.locators.MODAL_WINDOW)
+        except TimeoutException as e:
+            raise TimeoutException("Модалка не появилась") from e
 
     def drag_and_drop_ingredient(self):
-        # Находим ингредиент
-        ingredient = self.driver.find_element(*MainPageLocators.FIRST_INGREDIENT)
-        # Находим область для перетаскивания
-        target_area = self.driver.find_element(*MainPageLocators.TARGET_AREA)
 
-        # Выполняем перетаскивание
-        actions = ActionChains(self.driver)
-        actions.click_and_hold(ingredient).move_to_element(target_area).release().perform()
+        try:
+            try:
+                if self.is_element_visible(self.locators.MODAL_WINDOW):
+                    self.click_element(self.locators.CLOSE_MODAL_BUTTON)
+                    self.wait_for_element_invisible(self.locators.MODAL_WINDOW)
+            except Exception:
+                pass
+
+            source = self.find_element(self.locators.FIRST_INGREDIENT)
+            target = self.find_element(self.locators.TARGET_AREA)
+            
+            actions = ActionChains(self.driver)
+            actions.click_and_hold(source).move_to_element(target).release().perform()
+        except Exception as e:
+            raise
 
     def wait_for_ingredient_in_basket(self):
-        # Ждем, пока ингредиент появится в корзине
-        WebDriverWait(self.driver, 10).until(
-            EC.presence_of_element_located(MainPageLocators.CONSTRUCTOR_ROW)
-        )
+   
+        try:
+            self.wait_for_element_visible(self.locators.CONSTRUCTOR_ROW)
+        except TimeoutException as e:
+            raise TimeoutException("Ингридиент не добавлен") from e
 
     def get_counter_value(self):
-        # Получаем значение счетчика
-        counter = self.driver.find_element(*MainPageLocators.COUNTER)
-        return int(counter.text.strip())
+
+        try:
+            counter_text = self.get_element_text(self.locators.COUNTER)
+            return int(counter_text.strip())
+        except (ValueError, Exception) as e:
+            raise Exception(f"Не получено значение: {str(e)}")
 
     def click_order_button(self):
-        order_button = self.driver.find_element(*MainPageLocators.ORDER_BUTTON)
-        order_button.click()
+
+        try:
+            self.click_element(self.locators.ORDER_BUTTON)
+        except Exception as e:
+            raise
 
     def wait_for_order_confirmation_modal(self):
-        # Ожидаем, пока появится модальное окно подтверждения заказа
-        self.wait.until(EC.visibility_of_element_located(MainPageLocators.ORDER_CONFIRMATION_MODAL))
+
+        try:
+            self.wait_for_element_visible(self.locators.ORDER_CONFIRMATION_MODAL)
+        except TimeoutException as e:
+            raise TimeoutException("Модалка подтверждения заказа не появилась") from e
+            
+    def is_ingredient_modal_visible(self):
+
+        return self.is_element_visible(self.locators.MODAL_WINDOW)
+        
+    def get_modal_title_text(self):
+
+        try:
+            return self.get_element_text(self.locators.MODAL_TITLE)
+        except Exception as e:
+            raise Exception(f"Не получен текст модалки: {str(e)}")
+            
+    def get_order_number(self):
+
+        try:
+            self.wait_for_element_visible(self.locators.ORDER_NUMBER)
+            order_number_text = self.get_element_text(self.locators.ORDER_NUMBER)
+            return order_number_text
+        except Exception as e:
+            raise Exception(f"Не получен номер заказа: {str(e)}")

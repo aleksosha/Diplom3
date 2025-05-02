@@ -1,34 +1,41 @@
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
+from pages.base_page import BasePage
 from locators.forgot_password_page_locators import ForgotPasswordPageLocators
+from selenium.common.exceptions import TimeoutException, NoSuchElementException
 
 
-class ForgotPasswordPage:
+class ForgotPasswordPage(BasePage):
+
     def __init__(self, driver):
-        self.driver = driver
-        self.wait = WebDriverWait(driver, 10)
-
-    def open(self):
-        self.driver.get("https://stellarburgers.nomoreparties.site/login")
+        super().__init__(driver, url="https://stellarburgers.nomoreparties.site/login")
 
     def click_forgot_password_link(self):
-        forgot_password_link = self.driver.find_element(*ForgotPasswordPageLocators.FORGOT_PASSWORD_LINK)
-        forgot_password_link.click()
+     
+        try:
+            self.click_element(ForgotPasswordPageLocators.FORGOT_PASSWORD_LINK)
+        except Exception as e:
+            raise Exception(f"Не кликнута ссылка Восстановить пароль: {str(e)}") from e
 
     def reset_password(self, email):
-        email_field = self.driver.find_element(*ForgotPasswordPageLocators.EMAIL_FIELD)
-        email_field.send_keys(email)
-
-        reset_button = self.driver.find_element(*ForgotPasswordPageLocators.RESET_BUTTON)
-        reset_button.click()
-
-        self.wait.until(EC.url_contains("/reset-password"))
+      
+        try:
+            self.enter_text(ForgotPasswordPageLocators.EMAIL_FIELD, email)
+            self.click_element(ForgotPasswordPageLocators.RESET_BUTTON)
+            
+            self.wait_for_url_contains("/reset-password")
+        except Exception as e:
+            raise Exception(f"Не получилось восстановить пароль: {str(e)}") from e
 
     def click_eye_icon(self):
-        eye_icon = self.driver.find_element(*ForgotPasswordPageLocators.EYE_ICON)
-        eye_icon.click()
+     
+        try:
+            self.click_element(ForgotPasswordPageLocators.EYE_ICON)
+        except Exception as e:
+            raise Exception(f"Не кликнута иконка глаза: {str(e)}") from e
 
     def is_password_field_visible(self):
-        password_field = self.driver.find_element(*ForgotPasswordPageLocators.PASSWORD_FIELD)
-        return password_field.get_attribute('type') == 'text'
+     
+        try:
+            field_type = self.get_element_attribute(ForgotPasswordPageLocators.PASSWORD_FIELD, 'type')
+            return field_type == 'text'
+        except Exception as e:
+            raise Exception(f"Не проверено, что поле пароля доступно: {str(e)}") from e

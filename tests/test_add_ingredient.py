@@ -1,18 +1,26 @@
 import pytest
 from pages.main_page import MainPage
-from conftest import driver
 
-BASE_URL = "https://stellarburgers.nomoreparties.site"
+test_data = [
+    pytest.param(2, id="add_two_ingredients")
+]
 
-def test_add_ingredient_in_basket(driver):
-    driver.get(BASE_URL)
+@pytest.mark.parametrize("num_ingredients", test_data)
+def test_add_ingredient_in_basket(driver, base_url, num_ingredients):
 
-    main_page = MainPage(driver)
-
-    main_page.drag_and_drop_ingredient()
-
-    main_page.wait_for_ingredient_in_basket()
-
-    counter_value = main_page.get_counter_value()
-
-    assert counter_value == 2, f"Ожидалось число 2, но пришло {counter_value}"
+    try:
+        driver.get(base_url)
+        main_page = MainPage(driver)
+        
+        initial_counter = 0
+        
+        for i in range(num_ingredients):
+            main_page.drag_and_drop_ingredient()
+            main_page.wait_for_ingredient_in_basket()
+        
+        counter_value = main_page.get_counter_value()
+        
+        expected_value = initial_counter + num_ingredients
+        assert counter_value == expected_value, f"Ожидалось число {expected_value}, но пришло {counter_value}"
+    except Exception as e:
+        pytest.fail(f"Тест упал с ошибкой: {str(e)}")
